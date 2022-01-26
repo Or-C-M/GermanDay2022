@@ -1,0 +1,458 @@
+# Program Name:     German Daily Vocab Quiz Preparation
+# Created by:       Hongxi Chen (Amanda)
+# Last Modified:    08.19.2021
+
+
+
+import re, random
+
+
+class analyzeQuiz:
+
+    def __init__(self, EngList, DeuList, checkInEnglish):
+        if checkInEnglish:
+            self.EnglishList = self.regexList(EngList)
+        self.GermanList = self.regexList(DeuList)
+        self.DeuList = DeuList
+        self.checkInEnglish = checkInEnglish
+        self.missed = 0
+        self.missedVocab = [[], [], []]
+
+
+    def regexList(self, List):
+        self.returnList = []
+        for i in List:
+            self.returnList.append(self.regexSearch(i))
+        return self.returnList
+    
+
+    def endWithPunc(self, word):
+        try:
+            if '!' in word:
+                return True
+            elif '?' in word:
+                return True
+            elif word[-1] == '.':
+                return True
+            elif word[-1] == ')' and word[-3] == '(' and\
+                 word[-4] == ' ' and word[-5] == '.':
+                return True
+            else:
+                return False
+        except:
+            print("Error: function 'endWithPunc' only takes in \
+one string value as input.")
+
+
+    def endWithExtra(self, word):
+        if word[-4] == ' ' and\
+           word[-3] == '(' and\
+           word[-1] == ')':
+            return True
+        else:
+            return False
+
+
+    def regexSearch(self, word):
+        self.extraRegex = re.compile(r'^(.*)(\s\(\w\))')
+        self.puncRegex = re.compile(r'^(.*)(!|\?|\.)')
+        self.returnDict = {}
+        if self.endWithExtra(word):
+            self.mo = self.extraRegex.search(word)
+            if self.endWithPunc(self.mo.group(1)):
+                self.returnDict['word'] = self.puncRegex.search\
+                                          (self.mo.group(1)).group(1)
+            else:
+                self.returnDict['word'] = self.mo.group(1)
+                
+            self.returnDict['extra'] = self.mo.group(2)[2]
+
+        else:
+            if self.endWithPunc(word):
+                self.mo = self.puncRegex.search(word)
+                self.returnDict['word'] = self.mo.group(1)
+            else:
+                self.returnDict['word'] = word
+            self.returnDict['extra'] = None
+            
+        return self.returnDict
+        
+
+    def check(self, wordNum, answer):
+        if answer.isspace() or answer == '':
+            self.missedVocab[1].append(self.DeuList[wordNum])
+            self.missed = 0
+            return None, True
+
+        extra = None
+        self.answerDict = self.regexSearch(answer)
+        
+        if self.checkInEnglish:
+            self.wordDict = self.EnglishList[wordNum]
+        else:
+            self.wordDict = self.GermanList[wordNum]
+            
+        if self.answerDict['word'] == self.wordDict['word']:
+            if self.missed == 1:
+                self.missedVocab[0].append(self.DeuList[wordNum])
+                extra = True
+                
+            if self.checkInEnglish:
+                if self.answerDict['extra'] == None:
+                    if self.wordDict['extra'] != None:
+                        extra = self.wordDict['extra']
+                    else:
+                        pass
+                elif type(self.answerDict['extra']) == str:
+                    if self.answerDict['extra'] ==\
+                        self.wordDict['extra']:
+                        extra = True
+                    else:
+                        self.missedVocab[2].append(self.DeuList\
+                                                   [wordNum])
+                        extra = False
+                else:
+                    extra = self.wordDict['extra']
+                    
+            self.missed = 0
+            return True, extra
+            
+        else:
+            self.missed += 1
+            if self.missed == 2:
+                self.missedVocab[1].append(self.DeuList[wordNum])
+                self.missed = 0
+            return False, True
+
+
+    def skipped(self, wordNum):
+        self.missedVocab[1].append(self.GermanList[wordNum])
+
+
+    def printList(self, List):
+        for i in range(len(List)):
+            print(str(i+1) + '.', List[i])
+        print('Total:', len(List), 'items')
+
+    
+    def analyze(self):
+        print('These are the vocabs you missed once:')
+        self.printList(self.missedVocab[0])
+        print()
+        print('These are the vocabs you missed twice or skipped:')
+        self.printList(self.missedVocab[1])
+        print()
+        if self.checkInEnglish:
+            print('These are the vocabs you missed the extra property:')
+            self.printList(self.missedVocab[2])
+            print()
+
+
+def inputDict():
+    strDict = input()
+    dictRegex = re.compile(r'((\'|\")(.+)(\'|\"):\s(\'|\")(.+)(\'|\"))',\
+                           re.VERBOSE)
+    moList = dictRegex.findall(strDict)
+    print(moList)
+
+
+
+##############
+### Set Up ###
+##############
+
+# Create Testing List
+while True:
+    print('How many words would you like to test?', end=' ')
+    print('(Numeric value only)')
+    try:
+        wordNum = int(input())
+    except:
+        print('Cannot identify your response.')
+        continue
+    break
+print()
+
+
+while True:
+    defaultList = input('Using default list? (yes/no)\n').lower()
+
+    print()
+    
+    if defaultList == 'yes':
+        vocabDict = {'der Arm': 'the arm',
+                     'das Auge': 'the eye',
+                     'die Augenbrau': 'the eyebrow',
+                     'die Augenbrauen': 'the eyebrows',
+                     'der Bademantel': 'the bathrobe',
+                     'die Bademäntel': 'the bathrobes',
+                     'sich baden': 'to bathe oneself',
+                     'der Bart': 'the beard',
+                     'die Bärte': 'the beards',
+                     'der Bauch': 'the stomach',
+                     'die Bäuche': 'the stomachs',
+                     'die Beine': 'the legs',
+                     'die Bürsten': 'the brushes',
+                     'der Ellbogen': 'the elbow',
+                     'die Ellbogen': 'the elbows',
+                     'die Finger': 'the fingers',
+                     'fragen': 'to ask question',
+                     'die Füße': 'the feet',
+                     'die Gesichter': 'the faces',
+                     'das Haar': 'the hair',
+                     'der Haartrockner': 'the hair dryer',
+                     'die Hälse': 'the throats',
+                     'das Handtuch': 'the hand towel',
+                     'die Handtücher': 'the hand towels',
+                     'der Hausschuh': 'the slipper',
+                     'die Hausschuhe': 'the slippers',
+                     'das Knie': 'the knee',
+                     'die Köpfe': 'the heads',
+                     'die Lippe': 'the lip',
+                     'der Lippenstift': 'the lipstick',
+                     'der Mund': 'the mouth',
+                     'die Münder': 'the mouths',
+                     'die Nasen': 'the noses',
+                     'das Ohr': 'the ear',
+                     'die Ohren': 'the ears',
+                     'der Rasierer': 'the raser',
+                     'die Rasierer': 'the rasers'}
+        
+        if wordNum > len(vocabDict):
+            print('Note: the default vocabulary list contains \
+less items than you desired.\nDo you want to enter a new list? \
+(yes/no)')
+            if input().lower == 'yes':
+                defaultList = 'no'
+                continue
+            else:
+                break
+        break
+    
+    else:
+        vocabDict = {}
+        print('\nManually entering vocabulary list...')
+        print()
+        while True:
+            German = input('What is the German word?\n\
+(press enter to end or \'Dict\' to input a prepared dictionary)\n')
+            if German == '' or German.isspace():
+                print()
+                break
+            elif German.lower() == 'dict':
+                vocabDict += inputDict()
+                if input('Do you wish to continue inputting? \
+(yes/no)\n').lower() == 'yes':
+                    continue
+                else:
+                    break
+            English = input('What does it mean? \
+(press enter to end)\n')
+            if English == '' or English.isspace():
+                print()
+                break
+            vocabDict[German] = English
+            print()
+        break
+
+
+if wordNum >= len(vocabDict):
+    GermanList = list(vocabDict.keys())
+    EnglishList = list(vocabDict.values())
+    wordNum = len(vocabDict)
+
+else:
+    GermanList = list(random.sample(vocabDict.keys(), wordNum))
+    EnglishList = []
+    for word in GermanList:
+        EnglishList.append(vocabDict[word])
+    for i in range(len(GermanList)):
+        vocabDict[GermanList[i]] = EnglishList[i]
+
+
+startQuiz = input('''List setup complete.
+Launching quiz program? (press enter when ready)
+(Enter anything else to quit)''').lower()
+if (not startQuiz == '') and (not startQuiz.isspace()):
+    if input('\nQuitting program. Do you wish for a copy of \
+your vocabulary list? (yes/no)\n').lower() == 'yes':
+        print()
+        print('Here is your list:')
+        print(vocabDict)
+        print()
+    print('\nProgram exiting. Thank you for your usage!')
+    exit()
+
+print()
+print()
+print('---------< Vocabuluary Quiz launching >---------')
+print()
+print()
+
+
+
+
+############
+### Quiz ###
+############
+
+# Choose to answer in English/German
+while True:
+    
+    # Giving options
+    print('''How would you like to test out your vocabulary?
+a. Answer in English.
+b. Answer in German.''')
+    
+    # Receiving response
+    choice = input()
+
+    print()
+    print()
+
+
+    # User choose to answer in English
+    if choice.lower() == 'a' or\
+       choice.lower() == 'e' or\
+       'english' in choice.lower():
+        answerInEnglish = True
+        break
+    
+    # User choose to answer in German
+    elif choice.lower() == 'b' or\
+         choice.lower() == 'g' or\
+         'german' in choice.lower():
+        answerInEnglish = False
+        break
+        
+    # Received unvalid response
+    else:
+        print('Cannot identify your choice.')
+        
+
+
+if __name__ == '__main__':
+    vocabQuiz = analyzeQuiz(EnglishList, GermanList,\
+                            answerInEnglish)
+    
+    if answerInEnglish:
+        for i in range(wordNum):
+            print()
+            print("What's the English of '"+GermanList[i]+"'?")
+            print("(press Enter to pass or 'exit' the test)")
+            answer = input()
+
+            if answer == 'exit':
+                break
+
+            else:
+                result, extra = vocabQuiz.check(i, answer)
+
+                if result == True:
+                    if extra == True or extra == None:
+                        print('You got it!')
+                    elif type(extra) == str:
+                        print('Please enter the extra \
+property of the vocabulary:')
+                        print('(One letter only)')
+                        extraAnswer = input()
+                        if type(extraAnswer) == str and\
+                           len(extraAnswer) == 1:
+                            if extraAnswer.upper() == extra.upper():
+                                print('You got it!')
+                            else:
+                                print('Incorrect.', end='')
+                                print("The extra property of '"+\
+                                      GermanList[i]+"' is '"+\
+                                      extra+"'.")
+
+                elif result == None:
+                    print("The English of '"+GermanList[i]+\
+                          "' is '"+EnglishList[i]+"'.")
+                
+                else:
+                    print('Incorrect. Try again:')
+                    answer = input()
+                    if answer.lower() == 'exit':
+                        break
+                    else:
+                        result, extra = vocabQuiz.check(i, answer)
+
+                        if result == True:
+                            if extra == True or extra == None:
+                                print('You got it this time!')
+                            elif type(extra) == str:
+                                print('Please enter the extra \
+property of the vocabulary:')
+                                print('(One letter only)')
+                                extraAnswer = input()
+                                if type(extraAnswer) == str and\
+                                   len(extraAnswer) == 1:
+                                    if extraAnswer.upper() ==\
+                                       extra.upper():
+                                        print('You got it!')
+                                    else:
+                                        print('Incorrect.',end='')
+                                        print("The extra property\
+ of '"+GermanList[i]+"' is '"+extra+"'.")
+                        elif result == None:
+                            print("The English of '"+GermanList[i]+\
+                                  "' is '"+EnglishList[i]+"'.")
+                        else:
+                            print("Incorrect. The English of '"\
+                                  +GermanList[i]+"' is '"+\
+                                  EnglishList[i]+"'.")
+            print()
+
+
+    else:
+         for i in range(wordNum):
+            print()
+            print("What's the German of '"+EnglishList[i]+"'?")
+            print("(press Enter to pass or 'exit' the test)")
+            answer = input()
+
+            if answer.lower() == 'exit':
+                break
+
+            else:
+                result = vocabQuiz.check(i, answer)[0]
+                if result == True:
+                    print('You got it!')
+
+                elif result == None:
+                    print("The German of '"+GermanList[i]+\
+                          "' is '"+GermanList[i]+"'.")
+
+                else:
+                    print('Incorrect. Try again:')
+                    answer = input()
+                    if answer.lower() == 'exit':
+                        break
+                    else:
+                        result = vocabQuiz.check(i, answer)[0]
+                        if result == True:
+                            print('You got it!')
+
+                        elif result == None:
+                            print("The German of '"+GermanList[i]\
+                                  +"' is '"+GermanList[i]+"'.")
+                        else:
+                            print("Incorrect. The German of '"+\
+                                  EnglishList[i]+"' is '"+\
+                                  GermanList[i]+"'.")
+            print()
+            
+    print()
+    print()
+
+
+###########
+### End ###
+###########
+
+    vocabQuiz.analyze()
+    print()
+
+print('Study well! Good luck on the vocabulary quiz!')
+print()
